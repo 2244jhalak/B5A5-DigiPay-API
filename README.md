@@ -32,7 +32,21 @@ This API is designed for developers to integrate digital payment features into a
 - ✅ Automatic wallet creation on user registration  
 - ✅ Secure password storage with bcrypt  
 - ✅ Modular architecture for scalability  
-- ✅ Input validation and centralized error handling  
+- ✅ Input validation and centralized error handling
+
+### Folder Structure
+B5A5-DigiPay-API/
+│
+├── src/                  # Source code
+│   ├── app.ts            # Express app configuration and server entry point
+│   ├── modules/          # Feature-specific modules (auth,users, wallet, transaction.)
+|
+├── dist/                 # Compiled JavaScript code
+├── .gitignore            # Files to ignore in Git
+├── package.json          # Project dependencies & scripts
+├── package-lock.json     # Lock file
+└── tsconfig.json         # TypeScript configuration
+
 
 ---
 
