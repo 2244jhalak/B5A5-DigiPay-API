@@ -43,7 +43,7 @@ async function main() {
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
     });
 
-    console.log("✅ MongoDB is connected!!");
+    console.log("✅ MongoDB is connected");
 
     // Listen server
     app.listen(port, () => {
