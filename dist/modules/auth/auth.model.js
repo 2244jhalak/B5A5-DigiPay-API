@@ -49,6 +49,14 @@ const AuthSchema = new mongoose_1.Schema({
         enum: ["user", "agent", "admin"],
         default: "user"
     },
-    isBlocked: { type: Boolean, default: false }
+    isBlocked: { type: Boolean, default: false },
+    isApproved: {
+        type: String,
+        enum: ["approve", "suspend"],
+        default: function () {
+            // Agents need admin approval, others are approved by default
+            return this.role !== "agent" ? "approve" : "suspend";
+        }
+    }
 }, { timestamps: true });
 exports.default = mongoose_1.default.model("Auth", AuthSchema);

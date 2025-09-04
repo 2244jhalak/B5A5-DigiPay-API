@@ -253,20 +253,30 @@ exports.sendMoney = sendMoney;
 const cashIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== "agent")
-            return res.status(403).json({ message: "Forbidden" });
+        // ✅ Fetch full agent info from DB
+        const agentAuth = yield auth_model_1.default.findById((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+        console.log(agentAuth);
+        if (!agentAuth)
+            return res.status(404).json({ message: "Agent not found" });
+        // Agent role check
+        if (agentAuth.role !== "agent")
+            return res.status(403).json({ message: "Forbidden: Only agents can perform cash-in" });
+        // Agent approval check
+        if (agentAuth.isApproved !== "approve")
+            return res.status(403).json({ message: "Forbidden: Agent is not approved" });
+        // Parse request body
         const parsed = wallet_interface_1.walletSchema.parse(req.body);
         const { amount, toAuthId } = parsed;
         if (!toAuthId)
             return res.status(400).json({ message: "toAuthId is required" });
-        // Receiver wallet authId
+        // Receiver wallet
         const receiverWallet = yield wallet_model_1.Wallet.findOne({ authId: toAuthId });
         if (!receiverWallet)
             return res.status(404).json({ message: "Receiver wallet not found" });
         if (receiverWallet.isBlocked)
             return res.status(403).json({ message: "Receiver wallet is blocked" });
-        // Agent wallet authId
-        const agentWallet = yield wallet_model_1.Wallet.findOne({ authId: req.user.id });
+        // Agent wallet
+        const agentWallet = yield wallet_model_1.Wallet.findOne({ authId: agentAuth._id });
         if (!agentWallet)
             return res.status(404).json({ message: "Agent wallet not found" });
         if (agentWallet.isBlocked)
@@ -284,7 +294,7 @@ const cashIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 to: receiverWallet._id,
                 amount,
                 type: "cash_in",
-                initiatedBy: new mongoose_1.default.Types.ObjectId(req.user.id), // ✅ authId
+                initiatedBy: agentAuth._id,
                 commission,
                 session,
             });
@@ -316,13 +326,22 @@ exports.cashIn = cashIn;
 const cashOut = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     try {
-        if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== "agent")
-            return res.status(403).json({ message: "Forbidden" });
+        // ✅ Fetch full agent info from DB
+        const agentAuth = yield auth_model_1.default.findById((_a = req.user) === null || _a === void 0 ? void 0 : _a.id);
+        if (!agentAuth)
+            return res.status(404).json({ message: "Agent not found" });
+        // Agent role check
+        if (agentAuth.role !== "agent")
+            return res.status(403).json({ message: "Forbidden: Only agents can perform cash-out" });
+        // Agent approval check
+        if (agentAuth.isApproved !== "approve")
+            return res.status(403).json({ message: "Forbidden: Agent is not approved" });
+        // Parse request body
         const parsed = wallet_interface_1.walletSchema.parse(req.body);
         const { amount, toAuthId } = parsed;
         if (!toAuthId)
             return res.status(400).json({ message: "toAuthId is required" });
-        // target user
+        // Target user
         const user = yield user_model_1.User.findOne({ authId: toAuthId });
         if (!user)
             return res.status(404).json({ message: "User not found" });
@@ -333,8 +352,8 @@ const cashOut = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             return res.status(403).json({ message: "User wallet is blocked" });
         if (userWallet.balance < amount)
             return res.status(400).json({ message: "Insufficient balance" });
-        // agent
-        const agentWallet = yield wallet_model_1.Wallet.findOne({ authId: req.user.id });
+        // Agent wallet
+        const agentWallet = yield wallet_model_1.Wallet.findOne({ authId: agentAuth._id });
         if (!agentWallet)
             return res.status(404).json({ message: "Agent wallet not found" });
         if (agentWallet.isBlocked)
@@ -351,7 +370,7 @@ const cashOut = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 to: agentWallet._id,
                 amount,
                 type: "cash_out",
-                initiatedBy: new mongoose_1.default.Types.ObjectId(req.user.id), // ✅ authId
+                initiatedBy: agentAuth._id,
                 session,
             });
             yield session.commitTransaction();

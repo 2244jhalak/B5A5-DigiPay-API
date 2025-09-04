@@ -36,7 +36,7 @@ app.use("/api/wallet", wallet_route_1.default);
 app.use("/api/users", user_route_1.default);
 // Test route
 app.get("/", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    res.json({ message: "🚀 DigiPay API is running" });
+    res.json({ message: "🚀 DigiPay API is running....." });
 }));
 // Server + DB connection
 const port = process.env.PORT || 5000;

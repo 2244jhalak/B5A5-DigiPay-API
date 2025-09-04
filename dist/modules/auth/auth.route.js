@@ -10,4 +10,6 @@ router.post("/login", auth_controller_1.login);
  * Admin routes
  */
 router.patch("/block/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserBlock);
+// ✅ Admin can approve/suspend agent
+router.patch("/agentApprove/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleAgent);
 exports.default = router;

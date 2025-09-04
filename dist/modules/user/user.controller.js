@@ -47,7 +47,7 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
         if (!name || !email || !password || !role) {
             return res.status(400).json({ message: "Missing required fields" });
         }
-        // ✅ Check if email already exists
+        // Check if email already exists
         const existingAuth = yield auth_model_1.default.findOne({ email });
         if (existingAuth) {
             return res.status(400).json({ message: "Email already exists" });
@@ -59,8 +59,9 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
             name,
             email,
             password: hashedPassword,
-            role, // "user" or "agent"
+            role, // "user" or "agent" or "admin"
             isBlocked: false,
+            isApproved: role === "agent" ? "suspend" : "approve", // agents start as suspended, others approved
         });
         // 2️⃣ Create User & Wallet using newAuth._id
         const { user, wallet } = yield createUserWithWallet(newAuth._id.toString(), initialBalance);
@@ -72,8 +73,8 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
         });
     }
     catch (error) {
-        console.error(error);
         const message = error instanceof Error ? error.message : String(error);
+        console.error(error);
         res.status(500).json({ message: "Server error", error: message });
     }
 });
