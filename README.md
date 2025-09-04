@@ -42,7 +42,7 @@ This API is designed for developers to integrate digital payment features into a
 - **Language:** TypeScript  
 - **Database:** MongoDB (with Mongoose)  
 - **Authentication:** JWT (JSON Web Tokens)  
-- **Password Security:** bcrypt.js  
+- **Password Security:** bcrypt  
 - **Linting & Code Quality:** ESLint  
 - **Version Control:** Git & GitHub  
 
