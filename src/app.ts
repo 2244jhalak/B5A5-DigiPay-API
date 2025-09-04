@@ -3,11 +3,7 @@ import transactionRoutes from "./modules/transaction/transaction.route";
 import walletRoutes from "./modules/wallet/wallet.route";
 import authRoutes from "./modules/auth/auth.route";
 import userRoutes from "./modules/user/user.route";
-
-
-// ✅ user route import
 import cors from "cors";
-
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -17,12 +13,11 @@ dotenv.config();
 // Create express app
 const app: Application = express();
 
-
 // Middleware
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"]
+    origin: ["http://localhost:5173"], 
   })
 );
 
@@ -42,17 +37,25 @@ const port = process.env.PORT || 5000;
 
 async function main() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI as string);
+    // Mongoose connection with proper options
+    await mongoose.connect(process.env.MONGODB_URI as string, {
+      
+      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+    });
+
     console.log("✅ MongoDB is connected");
 
+    // Listen server
     app.listen(port, () => {
       console.log(`🚀 Server is running on port ${port}`);
     });
   } catch (error) {
     console.error("❌ Error starting server or connecting to DB:", error);
+    process.exit(1); // Exit process if DB connection fails
   }
 }
 
 main();
 
 export default app;
+
