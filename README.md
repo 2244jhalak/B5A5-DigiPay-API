@@ -52,13 +52,13 @@ This API is designed for developers to integrate digital payment features into a
 | ------ | --------- | ------ | ----------------------- |
 | POST   | /register | Public | Register a new user     |
 | POST   | /login    | Public | Login and get JWT token |
+| PATCH  | /block/\:id        | Admin  | Block or unblock a user     |
+| PATCH  | /agentApprove/\:id | Admin  | Approve or suspend an Agent |
 
 ### User Routes (/api/auth)
 | Method | Endpoint           | Access | Description                 |
 | ------ | ------------------ | ------ | --------------------------- |
 | POST   | /create            | Admin  | Create a new user           |
-| PATCH  | /block/\:id        | Admin  | Block or unblock a user     |
-| PATCH  | /agentApprove/\:id | Admin  | Approve or suspend an Agent |
 
 ### Wallet Routes (/api/auth)
 | Method | Endpoint          | Access             | Description                |
