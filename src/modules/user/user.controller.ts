@@ -67,8 +67,12 @@ export const createUserController = async (req: Request, res: Response) => {
       user,
       wallet,
     });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
+  }catch (error: unknown) {
+  console.error(error);
+
+  const message = error instanceof Error ? error.message : String(error);
+
+  res.status(500).json({ message: "Server error", error: message });
+}
+
 };

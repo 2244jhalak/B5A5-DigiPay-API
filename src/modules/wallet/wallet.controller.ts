@@ -72,10 +72,13 @@ export const getWallet = async (req: AuthRequest, res: Response) => {
         updatedAt: wallet.updatedAt,
       },
     });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
+  } catch (err: unknown) {
+  console.error(err);
+  const message = err instanceof Error ? err.message : String(err);
+
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 
 /**
@@ -116,11 +119,18 @@ export const topUp = async (req: AuthRequest, res: Response) => {
       session.endSession();
       throw txErr;
     }
-  } catch (err: any) {
-    if (err.name === "ZodError") return res.status(400).json({ errors: err.errors });
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+  } catch (err: unknown) {
+  if (err instanceof Error && err.name === "ZodError") {
+    // Zod validation error
+    // @ts-expect-error: ZodError has 'errors' property
+    return res.status(400).json({ errors: err.errors });
   }
+
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 
 
@@ -165,11 +175,20 @@ export const withdraw = async (req: AuthRequest, res: Response) => {
       session.endSession();
       throw txErr;
     }
-  } catch (err: any) {
-    if (err.name === "ZodError") return res.status(400).json({ errors: err.errors });
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+  } catch (err: unknown) {
+     // Zod validation error
+    
+  
+  if (err instanceof Error && err.name === "ZodError") {
+    // @ts-expect-error: ZodError has 'errors' property
+    return res.status(400).json({ errors: err.errors });
   }
+
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 
 
@@ -225,11 +244,18 @@ export const sendMoney = async (req: AuthRequest, res: Response) => {
       session.endSession();
       throw txErr;
     }
-  } catch (err: any) {
-    if (err.name === "ZodError") return res.status(400).json({ errors: err.errors });
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+  } catch (err: unknown) {
+  if (err instanceof Error && err.name === "ZodError") {
+    // @ts-expect-error: ZodError has 'errors' property
+    return res.status(400).json({ errors: err.errors });
   }
+
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
+
 };
 
 
@@ -291,10 +317,12 @@ export const cashIn = async (req: AuthRequest, res: Response) => {
       session.endSession();
       throw txErr;
     }
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
+  } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 
 /**
@@ -355,10 +383,12 @@ export const cashOut = async (req: AuthRequest, res: Response) => {
       throw txErr;
     }
 
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
+  } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 
 /**
@@ -389,9 +419,11 @@ export const toggleWalletBlock = async (req: AuthRequest, res: Response) => {
       message: `Wallet ${wallet.isBlocked ? "blocked" : "unblocked"}`,
       wallet 
     });
-  } catch (err: any) {
-    console.error("toggleWalletBlock error:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
+  } catch (err: unknown) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error("toggleWalletBlock error:", err);
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };
 

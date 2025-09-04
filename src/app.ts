@@ -7,7 +7,7 @@ import userRoutes from "./modules/user/user.route";
 
 // ✅ user route import
 import cors from "cors";
-import { Server } from "http";
+
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
@@ -16,7 +16,7 @@ dotenv.config();
 
 // Create express app
 const app: Application = express();
-let server: Server;
+
 
 // Middleware
 app.use(express.json());
@@ -45,7 +45,7 @@ async function main() {
     await mongoose.connect(process.env.MONGODB_URI as string);
     console.log("✅ MongoDB is connected");
 
-    server = app.listen(port, () => {
+    app.listen(port, () => {
       console.log(`🚀 Server is running on port ${port}`);
     });
   } catch (error) {

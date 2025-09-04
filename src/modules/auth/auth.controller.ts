@@ -38,7 +38,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     // create user in User collection
-    const newUserRecord = await User.create({
+    await User.create({
       authId: newUser._id,
       walletBalance: wallet.balance,
       isBlocked: wallet.isBlocked,
@@ -55,10 +55,20 @@ export const register = async (req: Request, res: Response) => {
         isBlocked: wallet.isBlocked,
       },
     });
-  } catch (error: any) {
-    console.error("Register error:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+  } catch (error: unknown) {
+  let errorMessage = "Unknown error";
+
+  if (error instanceof Error) {
+    errorMessage = error.message;
   }
+
+  console.error("Register error:", errorMessage);
+  res.status(500).json({
+    message: "Internal server error",
+    error: errorMessage,
+  });
+}
+
 };
 
 // ================= Login =================
@@ -108,13 +118,20 @@ export const login = async (req: Request, res: Response) => {
         accountBlocked: user.isBlocked || false,   // 🚀 account block info
       },
     });
-  } catch (error: any) {
-    console.error("Login error:", error);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+  } catch (error: unknown) {
+  let errorMessage = "Unknown error";
+
+  if (error instanceof Error) {
+    errorMessage = error.message;
   }
+
+  console.error("Login error:", errorMessage);
+  res.status(500).json({
+    message: "Internal server error",
+    error: errorMessage,
+  });
+}
+
 };
 
 /**
@@ -143,8 +160,15 @@ export const toggleUserBlock = async (req: Request, res: Response) => {
       message: `${authUser.name} ${authUser.isBlocked ? "blocked" : "unblocked"}`,
       authUser,
     });
-  } catch (err: any) {
-    console.error("toggleUserBlock error:", err);
-    res.status(500).json({ message: "Server error", error: err.message });
+  } catch (err: unknown) {
+  let errorMessage = "Unknown error";
+
+  if (err instanceof Error) {
+    errorMessage = err.message;
   }
+
+  console.error("toggleUserBlock error:", errorMessage);
+  res.status(500).json({ message: "Server error", error: errorMessage });
+}
+
 };

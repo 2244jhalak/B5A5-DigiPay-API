@@ -2,7 +2,7 @@ import { Response } from "express";
 import mongoose, { Types } from "mongoose";
 import {TransactionModel} from "./transaction.model";
 import { AuthRequest } from "../../types/express";
-import { PopulatedTransaction, transactionSchema } from "./transaction.interface";
+import { PopulatedTransaction } from "./transaction.interface";
 
 /**
  * Create a transaction record (used by wallet operations)
@@ -65,8 +65,13 @@ export const getTransactions = async (req: AuthRequest, res: Response) => {
     });
 
     return res.json({ transactions: filteredTxs });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
+  } catch (err: unknown) {
+  console.error(err);
+
+  
+  const message = err instanceof Error ? err.message : String(err);
+
+  return res.status(500).json({ message: "Server error", error: message });
+}
+
 };

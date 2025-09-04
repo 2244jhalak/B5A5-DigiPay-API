@@ -30,10 +30,18 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     };
 
     next();
-  } catch (err: any) {
-    console.error(err);
-    return res.status(401).json({ message: "Unauthorized: Invalid token" });
+  } catch (err: unknown) {
+  const errorMessage = "Unauthorized: Invalid token";
+
+  if (err instanceof Error) {
+    console.error("Auth error:", err.message);
+  } else {
+    console.error("Auth error:", err);
   }
+
+  return res.status(401).json({ message: errorMessage });
+}
+
 };
 
 /**
