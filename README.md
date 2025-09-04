@@ -47,6 +47,16 @@ This API is designed for developers to integrate digital payment features into a
 | `package-lock.json`| Lock file for exact dependency versions                           |
 | `tsconfig.json`    | TypeScript configuration                                         |
 
+### Base Routes
+
+| Base Path                  | Module                 | Description                                  |
+|-----------------------------|-----------------------|----------------------------------------------|
+| `/api/auth`                 | Authentication        | Handles user registration, login, blocking, agent approval/suspension  |
+| `/api/transactions`         | Transactions          | Handles transaction history and management   |
+| `/api/wallet`               | Wallet                | Handles wallet operations (top-up, send, withdraw, cash-in, cash out) |
+| `/api/users`                | User Management       | Handles user creation |
+
+
 ### Authentication Routes (/api/auth)
 | Method | Endpoint  | Access | Description             |
 | ------ | --------- | ------ | ----------------------- |
