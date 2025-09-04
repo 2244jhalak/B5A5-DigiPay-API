@@ -1,8 +1,8 @@
-import { ObjectId } from "mongoose";
+import { Types } from "mongoose";
 import { z } from "zod";
 
 export interface IWallet {
-  userId: ObjectId;
+  authId: Types.ObjectId;
   balance: number;
   isBlocked: boolean;
   createdAt?: Date;
@@ -10,7 +10,6 @@ export interface IWallet {
 }
 
 export const walletSchema = z.object({
-  amount: z.number()
-           .refine(val => val > 0, { message: "Amount must be greater than 0" }),
-  toUserId: z.string().optional()
+  amount: z.number().refine(val => val > 0, { message: "Amount must be greater than 0" }),
+  toAuthId: z.string().optional(),
 });

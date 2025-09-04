@@ -2,6 +2,10 @@ import express, { Application, Request, Response } from "express";
 import transactionRoutes from "./modules/transaction/transaction.route";
 import walletRoutes from "./modules/wallet/wallet.route";
 import authRoutes from "./modules/auth/auth.route";
+import userRoutes from "./modules/user/user.route";
+
+
+// ✅ user route import
 import cors from "cors";
 import { Server } from "http";
 import mongoose from "mongoose";
@@ -21,10 +25,12 @@ app.use(
     origin: ["http://localhost:5173"]
   })
 );
+
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/wallet", walletRoutes);
-
+app.use("/api/users", userRoutes);
 
 // Test route
 app.get("/", async (req: Request, res: Response) => {

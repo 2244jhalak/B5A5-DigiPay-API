@@ -1,11 +1,11 @@
 import { Response } from "express";
 import mongoose, { Types } from "mongoose";
-import TransactionModel from "./transaction.model";
+import {TransactionModel} from "./transaction.model";
 import { AuthRequest } from "../../types/express";
-import { transactionSchema } from "./transaction.interface";
+import { PopulatedTransaction, transactionSchema } from "./transaction.interface";
 
 /**
- * Helper: create transaction record
+ * Create a transaction record (used by wallet operations)
  */
 export const createTransactionRecord = async (data: {
   from?: Types.ObjectId | null;
@@ -36,24 +36,35 @@ export const createTransactionRecord = async (data: {
 };
 
 /**
- * Get transactions for a user or admin
+ * Get transactions
  */
 export const getTransactions = async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user;
     if (!requester) return res.status(401).json({ message: "Unauthorized" });
 
-    const queryUserId = (req.query.userId as string) ?? requester.id;
+    const queryAuthId = (req.query.userId as string) ?? requester.id;
 
-    // Only admin or self can see
-    if (requester.role !== "admin" && requester.id !== queryUserId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
+    const txs = await TransactionModel.find()
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .populate({
+        path: "from",
+        populate: { path: "authId", select: "name email role" },
+      })
+      .populate({
+        path: "to",
+        populate: { path: "authId", select: "name email role" },
+      })
+      .lean<PopulatedTransaction[]>();
 
-    const q = { $or: [{ from: new Types.ObjectId(queryUserId) }, { to: new Types.ObjectId(queryUserId) }] };
-    const txs = await TransactionModel.find(q).sort({ createdAt: -1 }).limit(200);
+    const filteredTxs = txs.filter(tx => {
+      const fromId = tx.from?.authId?._id.toString();
+      const toId = tx.to?.authId?._id.toString();
+      return fromId === queryAuthId || toId === queryAuthId || requester.role === "admin";
+    });
 
-    return res.json({ transactions: txs });
+    return res.json({ transactions: filteredTxs });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ message: "Server error", error: err.message });

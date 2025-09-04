@@ -4,7 +4,8 @@ import { getTransactions } from "./transaction.controller";
 
 const router = Router();
 
-// Only authenticated users or admins can access
+// Authenticated users or admins can access transaction history
 router.get("/", authenticate, authorize(["user", "agent", "admin"]), getTransactions);
+
 
 export default router;

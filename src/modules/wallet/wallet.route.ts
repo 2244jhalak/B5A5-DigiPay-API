@@ -7,7 +7,7 @@ import {
   cashIn,
   cashOut,
   toggleWalletBlock,
-  getTransactions,
+  
 } from "./wallet.controller";
 import { authenticate, authorize } from "../auth/auth.middleware";
 
@@ -27,14 +27,13 @@ router.post("/send", authenticate, authorize(["user"]), sendMoney); // user send
 router.post("/cash-in", authenticate, authorize(["agent"]), cashIn); // agent adds money to user
 router.post("/cash-out", authenticate, authorize(["agent"]), cashOut); // agent withdraws from user
 
+
 /**
  * Admin routes
  */
-router.patch("/block/:walletId", authenticate, authorize(["admin"]), toggleWalletBlock); // block/unblock wallet
+// Admin route to get any user's wallet
+router.get("/:authId", authenticate, authorize(["admin"]), getWallet);
 
-/**
- * Transactions
- */
-router.get("/transactions", authenticate, authorize(["user", "agent", "admin"]), getTransactions); // transaction history
+router.patch("/block/:walletId", authenticate, authorize(["admin"]), toggleWalletBlock); // block/unblock wallet
 
 export default router;

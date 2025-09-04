@@ -1,8 +1,10 @@
 import { Response } from "express";
 import mongoose, { Types } from "mongoose";
+import AuthModel from "../auth/auth.model";
 import { Wallet as WalletModel } from "./wallet.model";
-import TransactionModel from "../transaction/transaction.model";
+import {TransactionModel} from "../transaction/transaction.model";
 import { walletSchema } from "./wallet.interface";
+import { User as UserModel } from "../user/user.model";
 import { AuthRequest } from "../../types/express";
 
 /**
@@ -37,27 +39,39 @@ const createTransactionRecord = async (data: {
 };
 
 /**
- * Get wallet (user, agent, or admin)
+ * Get wallet
  */
 export const getWallet = async (req: AuthRequest, res: Response) => {
   try {
     const requester = req.user;
     if (!requester) return res.status(401).json({ message: "Unauthorized" });
 
-    const userId = req.params.userId ?? requester.id;
+    const param = req.params.authId ?? req.query.userId ?? requester.id;
+    if (!param) return res.status(400).json({ message: "userId is required" });
 
-    // Admin can view any wallet
-    if (requester.role !== "admin" && requester.id !== userId) {
-      return res.status(403).json({ message: "Forbidden" });
+    let wallet = null;
+
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      // find wallet authId (not _id/userId)
+      wallet = await WalletModel.findOne({ authId: param })
+        .populate("authId", "name email role")
+        .lean();
     }
 
-    const wallet = await WalletModel.findOne({ userId: new Types.ObjectId(userId) }).populate(
-      "owner",
-      "name email role"
-    );
-    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    if (!wallet) {
+      return res.status(404).json({ message: "Wallet not found" });
+    }
 
-    return res.json({ wallet });
+    return res.json({
+      wallet: {
+        id: wallet._id,
+        user: wallet.authId,
+        balance: wallet.balance,
+        isBlocked: wallet.isBlocked,
+        createdAt: wallet.createdAt,
+        updatedAt: wallet.updatedAt,
+      },
+    });
   } catch (err: any) {
     console.error(err);
     return res.status(500).json({ message: "Server error", error: err.message });
@@ -65,16 +79,16 @@ export const getWallet = async (req: AuthRequest, res: Response) => {
 };
 
 /**
- * User: Top-up
+ * Top-up
  */
 export const topUp = async (req: AuthRequest, res: Response) => {
   try {
     const parsed = walletSchema.parse(req.body);
     const amount = parsed.amount;
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const authId = req.user?.id;
+    if (!authId) return res.status(401).json({ message: "Unauthorized" });
 
-    const wallet = await WalletModel.findOne({ userId: new Types.ObjectId(userId) });
+    const wallet = await WalletModel.findOne({ authId });
     if (!wallet) return res.status(404).json({ message: "Wallet not found" });
     if (wallet.isBlocked) return res.status(403).json({ message: "Wallet is blocked" });
 
@@ -86,11 +100,10 @@ export const topUp = async (req: AuthRequest, res: Response) => {
 
       await createTransactionRecord({
         from: null,
-        to: new Types.ObjectId(wallet.userId.toString()),
-
+        to: wallet._id,
         amount,
         type: "topup",
-        initiatedBy: new Types.ObjectId(userId),
+        initiatedBy: new mongoose.Types.ObjectId(authId), // authId
         session,
       });
 
@@ -110,17 +123,20 @@ export const topUp = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
+
 /**
- * User: Withdraw
+ * Withdraw
  */
 export const withdraw = async (req: AuthRequest, res: Response) => {
   try {
     const parsed = walletSchema.parse(req.body);
     const amount = parsed.amount;
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+    const authId = req.user?.id;
+    if (!authId) return res.status(401).json({ message: "Unauthorized" });
 
-    const wallet = await WalletModel.findOne({ userId: new Types.ObjectId(userId) });
+    // Wallet authId
+    const wallet = await WalletModel.findOne({ authId });
     if (!wallet) return res.status(404).json({ message: "Wallet not found" });
     if (wallet.isBlocked) return res.status(403).json({ message: "Wallet is blocked" });
     if (wallet.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
@@ -132,12 +148,11 @@ export const withdraw = async (req: AuthRequest, res: Response) => {
       await wallet.save({ session });
 
       await createTransactionRecord({
-        from: new Types.ObjectId(wallet.userId.toString()),
-
+        from: wallet._id,
         to: null,
         amount,
         type: "withdraw",
-        initiatedBy: new Types.ObjectId(userId),
+        initiatedBy: new mongoose.Types.ObjectId(authId), // authId
         session,
       });
 
@@ -157,22 +172,24 @@ export const withdraw = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
 /**
- * User: Send money to another user
+ * Send money
  */
 export const sendMoney = async (req: AuthRequest, res: Response) => {
   try {
     const parsed = walletSchema.parse(req.body);
-    const { amount, toUserId } = parsed;
-    const fromUserId = req.user?.id;
-    if (!fromUserId) return res.status(401).json({ message: "Unauthorized" });
-    if (!toUserId) return res.status(400).json({ message: "toUserId is required" });
+    const { amount, toAuthId } = parsed;
+    const fromAuthId = req.user?.id;
+    if (!fromAuthId) return res.status(401).json({ message: "Unauthorized" });
+    if (!toAuthId) return res.status(400).json({ message: "toAuthId is required" });
 
-    const senderWallet = await WalletModel.findOne({ userId: new Types.ObjectId(fromUserId) });
-    const receiverWallet = await WalletModel.findOne({ userId: new Types.ObjectId(toUserId) });
-
+    // Wallet authId
+    const senderWallet = await WalletModel.findOne({ authId: fromAuthId });
+    const receiverWallet = await WalletModel.findOne({ authId: toAuthId });
     if (!senderWallet || !receiverWallet)
       return res.status(404).json({ message: "Sender or receiver wallet not found" });
+
     if (senderWallet.isBlocked) return res.status(403).json({ message: "Sender wallet is blocked" });
     if (receiverWallet.isBlocked) return res.status(403).json({ message: "Receiver wallet is blocked" });
     if (senderWallet.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
@@ -187,12 +204,11 @@ export const sendMoney = async (req: AuthRequest, res: Response) => {
       await receiverWallet.save({ session });
 
       await createTransactionRecord({
-        from: new Types.ObjectId(senderWallet.userId.toString()),
-        to: new Types.ObjectId(receiverWallet.userId.toString()),
-
+        from: senderWallet._id,
+        to: receiverWallet._id,
         amount,
         type: "send",
-        initiatedBy: new Types.ObjectId(fromUserId),
+        initiatedBy: new mongoose.Types.ObjectId(fromAuthId), // sender authId
         session,
       });
 
@@ -216,157 +232,166 @@ export const sendMoney = async (req: AuthRequest, res: Response) => {
   }
 };
 
+
 /**
- * Agent: Cash-in (add money to user wallet)
+ * Cash-in
  */
 export const cashIn = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role !== "agent") return res.status(403).json({ message: "Forbidden" });
+    if (req.user?.role !== "agent") 
+      return res.status(403).json({ message: "Forbidden" });
 
     const parsed = walletSchema.parse(req.body);
-    const { amount, toUserId } = parsed;
-    if (!toUserId) return res.status(400).json({ message: "toUserId is required" });
+    const { amount, toAuthId } = parsed;
+    if (!toAuthId) return res.status(400).json({ message: "toAuthId is required" });
 
-    const receiverWallet = await WalletModel.findOne({ userId: new Types.ObjectId(toUserId) });
+    // Receiver wallet authId
+    const receiverWallet = await WalletModel.findOne({ authId: toAuthId });
     if (!receiverWallet) return res.status(404).json({ message: "Receiver wallet not found" });
     if (receiverWallet.isBlocked) return res.status(403).json({ message: "Receiver wallet is blocked" });
 
+    // Agent wallet authId
+    const agentWallet = await WalletModel.findOne({ authId: req.user.id });
+    if (!agentWallet) return res.status(404).json({ message: "Agent wallet not found" });
+    if (agentWallet.isBlocked) return res.status(403).json({ message: "Agent wallet is blocked" });
+
     const session = await mongoose.startSession();
     session.startTransaction();
+
     try {
-      receiverWallet.balance += amount;
+      const commission = amount * 0.02;
+
+      receiverWallet.balance += amount - commission;
+      agentWallet.balance += commission;
+
       await receiverWallet.save({ session });
+      await agentWallet.save({ session });
 
       await createTransactionRecord({
-        from: req.user.id ? new Types.ObjectId(req.user.id) : null,
-        to: new Types.ObjectId(receiverWallet.userId.toString()),
-
+        from: agentWallet._id,
+        to: receiverWallet._id,
         amount,
         type: "cash_in",
-        initiatedBy: new Types.ObjectId(req.user.id!),
+        initiatedBy: new mongoose.Types.ObjectId(req.user.id), // ✅ authId
+        commission,
         session,
       });
 
       await session.commitTransaction();
       session.endSession();
 
-      return res.json({ message: "Cash-in successful", receiverBalance: receiverWallet.balance });
+      return res.json({
+        message: "Cash-in successful",
+        receiverBalance: receiverWallet.balance,
+        agentBalance: agentWallet.balance,
+        commission,
+      });
     } catch (txErr) {
       await session.abortTransaction();
       session.endSession();
       throw txErr;
     }
   } catch (err: any) {
-    if (err.name === "ZodError") return res.status(400).json({ errors: err.errors });
     console.error(err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
 /**
- * Agent: Cash-out (withdraw money from user wallet)
+ * Cash-out
  */
 export const cashOut = async (req: AuthRequest, res: Response) => {
   try {
-    // Role validation: only agent can cash-out
-    if (req.user?.role !== "agent")
-      return res.status(403).json({ message: "Forbidden" });
+    if (req.user?.role !== "agent") return res.status(403).json({ message: "Forbidden" });
 
-    // Parse request body
     const parsed = walletSchema.parse(req.body);
-    const { amount, toUserId } = parsed; // agent cashes out from a user wallet
-    if (!toUserId) return res.status(400).json({ message: "toUserId is required" });
+    const { amount, toAuthId } = parsed;
+    if (!toAuthId) return res.status(400).json({ message: "toAuthId is required" });
 
-    // Find user's wallet
-    const userWallet = await WalletModel.findOne({
-      userId: new Types.ObjectId(toUserId),
-    });
+    // target user
+    const user = await UserModel.findOne({ authId: toAuthId });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const userWallet = await WalletModel.findOne({ authId: toAuthId });
     if (!userWallet) return res.status(404).json({ message: "User wallet not found" });
-    if (userWallet.isBlocked)
-      return res.status(403).json({ message: "User wallet is blocked" });
-    if (userWallet.balance < amount)
-      return res.status(400).json({ message: "Insufficient balance" });
+    if (userWallet.isBlocked) return res.status(403).json({ message: "User wallet is blocked" });
+    if (userWallet.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
 
-    // Start transaction
+    // agent
+    const agentWallet = await WalletModel.findOne({ authId: req.user.id });
+    if (!agentWallet) return res.status(404).json({ message: "Agent wallet not found" });
+    if (agentWallet.isBlocked) return res.status(403).json({ message: "Agent wallet is blocked" });
+
     const session = await mongoose.startSession();
     session.startTransaction();
-    try {
-      // Deduct amount from user wallet
-      userWallet.balance -= amount;
-      await userWallet.save({ session });
 
-      // Create transaction record
+    try {
+      userWallet.balance -= amount;
+      agentWallet.balance += amount;
+
+      await userWallet.save({ session });
+      await agentWallet.save({ session });
+
       await createTransactionRecord({
-        from: new Types.ObjectId(userWallet.userId.toString()),
-        to: req.user.id ? new Types.ObjectId(req.user.id) : null,
+        from: userWallet._id,
+        to: agentWallet._id,
         amount,
         type: "cash_out",
-        initiatedBy: new Types.ObjectId(req.user.id!),
+        initiatedBy: new mongoose.Types.ObjectId(req.user.id), // ✅ authId
         session,
       });
 
-      // Commit transaction
       await session.commitTransaction();
       session.endSession();
 
       return res.json({
         message: "Cash-out successful",
         userBalance: userWallet.balance,
+        agentBalance: agentWallet.balance,
       });
     } catch (txErr) {
       await session.abortTransaction();
       session.endSession();
       throw txErr;
     }
+
   } catch (err: any) {
-    if (err.name === "ZodError") return res.status(400).json({ errors: err.errors });
     console.error(err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-
 /**
- * Admin: Block/Unblock wallet
+ * Admin: Block / Unblock
  */
 export const toggleWalletBlock = async (req: AuthRequest, res: Response) => {
   try {
-    if (req.user?.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+    if (req.user?.role !== "admin") 
+      return res.status(403).json({ message: "Forbidden" });
 
     const { walletId } = req.params;
     const wallet = await WalletModel.findById(walletId);
     if (!wallet) return res.status(404).json({ message: "Wallet not found" });
 
+    // 🔍 wallet owner
+    const owner = await AuthModel.findById(wallet.authId);
+    if (!owner) return res.status(404).json({ message: "Owner not found" });
+
+    // ❌ Prevent blocking another admin's wallet
+    if (owner.role === "admin") {
+      return res.status(403).json({ message: "You cannot block/unblock another admin's wallet" });
+    }
+
     wallet.isBlocked = !wallet.isBlocked;
     await wallet.save();
 
-    return res.json({ message: `Wallet ${wallet.isBlocked ? "blocked" : "unblocked"}` });
+    return res.json({ 
+      message: `Wallet ${wallet.isBlocked ? "blocked" : "unblocked"}`,
+      wallet 
+    });
   } catch (err: any) {
-    console.error(err);
+    console.error("toggleWalletBlock error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
-/**
- * Transaction history
- */
-export const getTransactions = async (req: AuthRequest, res: Response) => {
-  try {
-    const requester = req.user;
-    if (!requester) return res.status(401).json({ message: "Unauthorized" });
-
-    const queryUserId = (req.query.userId as string) ?? requester.id;
-
-    if (requester.role !== "admin" && requester.id !== queryUserId) {
-      return res.status(403).json({ message: "Forbidden" });
-    }
-
-    const q = { $or: [{ from: new Types.ObjectId(queryUserId) }, { to: new Types.ObjectId(queryUserId) }] };
-    const txs = await TransactionModel.find(q).sort({ createdAt: -1 }).limit(200);
-
-    return res.json({ transactions: txs });
-  } catch (err: any) {
-    console.error(err);
-    return res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
