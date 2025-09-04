@@ -17,7 +17,7 @@ const app: Application = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // Add your Vercel frontend URL in production
+    origin: ["http://localhost:5173"], // 👉 Add your Vercel frontend URL in production
   })
 );
 
@@ -33,7 +33,12 @@ app.get("/", async (_req: Request, res: Response) => {
 });
 
 // ================= MongoDB Connection =================
-let cached: { conn: mongoose.Connection | null; promise: Promise<mongoose.Connection> | null } = (global as any).mongoose || { conn: null, promise: null };
+const globalForMongoose = global as unknown as {
+  mongoose?: { conn: mongoose.Connection | null; promise: Promise<mongoose.Connection> | null };
+};
+
+const cached: { conn: mongoose.Connection | null; promise: Promise<mongoose.Connection> | null } =
+  globalForMongoose.mongoose || { conn: null, promise: null };
 
 async function connectDB(): Promise<mongoose.Connection> {
   if (cached.conn) return cached.conn;
@@ -45,6 +50,7 @@ async function connectDB(): Promise<mongoose.Connection> {
       })
       .then((mongooseInstance) => mongooseInstance.connection);
   }
+
   cached.conn = await cached.promise;
   return cached.conn;
 }
