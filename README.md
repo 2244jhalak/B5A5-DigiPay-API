@@ -110,3 +110,5 @@ This API is designed for developers to integrate digital payment features into a
 ```bash
 git clone https://github.com/2244jhalak/B5A5-DigiPay-API.git
 cd B5A5-DigiPay-API
+npm install
+npm run dev
