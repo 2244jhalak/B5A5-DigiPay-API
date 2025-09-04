@@ -29,7 +29,7 @@ app.use("/api/users", userRoutes);
 
 // Test route
 app.get("/", async (_req: Request, res: Response) => {
-  res.json({ message: "🚀 DigiPay API is running....." });
+  res.json({ message: "🚀 DigiPay API is running" });
 });
 
 // ================= MongoDB Connection =================
