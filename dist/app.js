@@ -27,7 +27,7 @@ const app = (0, express_1.default)();
 // Middleware
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173"], // Add your Vercel frontend URL in production
+    origin: ["http://localhost:5173"], // 👉 Add your Vercel frontend URL in production
 }));
 // Routes
 app.use("/api/auth", auth_route_1.default);
@@ -39,7 +39,8 @@ app.get("/", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     res.json({ message: "🚀 DigiPay API is running" });
 }));
 // ================= MongoDB Connection =================
-let cached = global.mongoose || { conn: null, promise: null };
+const globalForMongoose = global;
+const cached = globalForMongoose.mongoose || { conn: null, promise: null };
 function connectDB() {
     return __awaiter(this, void 0, void 0, function* () {
         if (cached.conn)
