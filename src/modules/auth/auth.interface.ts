@@ -1,3 +1,4 @@
+
 import { z } from "zod";
 
 export interface IAuth {
@@ -6,7 +7,7 @@ export interface IAuth {
   password: string; 
   role: "user" | "agent" | "admin"; 
   isBlocked?: boolean;   
-  createdAt?: Date;
+  isApproved?: "approve" | "suspend";  
   updatedAt?: Date;
 }
 
@@ -15,7 +16,7 @@ export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["user", "agent", "admin"]) 
+  role: z.enum(["user", "agent", "admin"])
 });
 
 // Login Schema
@@ -23,4 +24,3 @@ export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters")
 });
-

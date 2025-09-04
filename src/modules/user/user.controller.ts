@@ -40,7 +40,7 @@ export const createUserController = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // ✅ Check if email already exists
+    // Check if email already exists
     const existingAuth = await AuthModel.findOne({ email });
     if (existingAuth) {
       return res.status(400).json({ message: "Email already exists" });
@@ -54,8 +54,9 @@ export const createUserController = async (req: Request, res: Response) => {
       name,
       email,
       password: hashedPassword,
-      role, // "user" or "agent"
+      role, // "user" or "agent" or "admin"
       isBlocked: false,
+      isApproved: role === "agent" ? "suspend" : "approve", // agents start as suspended, others approved
     });
 
     // 2️⃣ Create User & Wallet using newAuth._id
@@ -67,12 +68,9 @@ export const createUserController = async (req: Request, res: Response) => {
       user,
       wallet,
     });
-  }catch (error: unknown) {
-  console.error(error);
-
-  const message = error instanceof Error ? error.message : String(error);
-
-  res.status(500).json({ message: "Server error", error: message });
-}
-
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(error);
+    res.status(500).json({ message: "Server error", error: message });
+  }
 };

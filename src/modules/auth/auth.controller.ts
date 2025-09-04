@@ -28,6 +28,8 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       role,
+      // ✅ string enum instead of boolean
+      isApproved: role !== "agent" ? "approve" : "suspend",
     });
 
     // create wallet for this user
@@ -51,24 +53,19 @@ export const register = async (req: Request, res: Response) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
+        isApproved: newUser.isApproved,
         walletBalance: wallet.balance,
         isBlocked: wallet.isBlocked,
       },
     });
   } catch (error: unknown) {
-  let errorMessage = "Unknown error";
-
-  if (error instanceof Error) {
-    errorMessage = error.message;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Register error:", errorMessage);
+    res.status(500).json({
+      message: "Internal server error",
+      error: errorMessage,
+    });
   }
-
-  console.error("Register error:", errorMessage);
-  res.status(500).json({
-    message: "Internal server error",
-    error: errorMessage,
-  });
-}
-
 };
 
 // ================= Login =================
@@ -76,32 +73,19 @@ export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
-    // must select password explicitly
     const user = await AuthModel.findOne({ email }).select("+password");
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid email or password" });
 
-    // check account-level block
     if (user.isBlocked) {
-      return res.status(403).json({
-        message: "Your account has been blocked. Please contact support.",
-      });
+      return res.status(403).json({ message: "Your account has been blocked. Please contact support." });
     }
 
-    // check password match
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-    // find wallet (optional, since admin might block wallet separately)
     const wallet = await Wallet.findOne({ authId: user._id });
 
-    // generate JWT
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     res.status(200).json({
       message: wallet?.isBlocked
@@ -113,26 +97,19 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        isApproved: user.isApproved, // agent status দেখাবে
         walletBalance: wallet?.balance || 0,
-        walletBlocked: wallet?.isBlocked || false, // 🚀 wallet block info
-        accountBlocked: user.isBlocked || false,   // 🚀 account block info
+        walletBlocked: wallet?.isBlocked || false,
+        accountBlocked: user.isBlocked || false,
       },
     });
   } catch (error: unknown) {
-  let errorMessage = "Unknown error";
-
-  if (error instanceof Error) {
-    errorMessage = error.message;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Login error:", errorMessage);
+    res.status(500).json({ message: "Internal server error", error: errorMessage });
   }
-
-  console.error("Login error:", errorMessage);
-  res.status(500).json({
-    message: "Internal server error",
-    error: errorMessage,
-  });
-}
-
 };
+
 
 /**
  * Admin: Block / Unblock
@@ -140,7 +117,6 @@ export const login = async (req: Request, res: Response) => {
 export const toggleUserBlock = async (req: Request, res: Response) => {
   try {
     const authUser = await AuthModel.findById(req.params.id); 
-    console.log("authUser:", authUser);
 
     if (!authUser) return res.status(404).json({ message: "Auth user not found" });
 
@@ -161,14 +137,40 @@ export const toggleUserBlock = async (req: Request, res: Response) => {
       authUser,
     });
   } catch (err: unknown) {
-  let errorMessage = "Unknown error";
+    let errorMessage = "Unknown error";
 
-  if (err instanceof Error) {
-    errorMessage = err.message;
+    if (err instanceof Error) {
+      errorMessage = err.message;
+    }
+
+    console.error("toggleUserBlock error:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
   }
+};
 
-  console.error("toggleUserBlock error:", errorMessage);
-  res.status(500).json({ message: "Server error", error: errorMessage });
-}
+/**
+ * Admin: Approve / Suspend Agent
+ */
+export const toggleAgent = async (req: Request, res: Response) => {
+  try {
+    const agent = await AuthModel.findById(req.params.id);
+    console.log(agent)
+    if (!agent || agent.role !== "agent")
+      return res.status(404).json({ message: "Agent not found" });
 
+    // ✅ toggle using string enum
+    agent.isApproved = agent.isApproved === "approve" ? "suspend" : "approve";
+    await agent.save();
+
+    res.json({ 
+      message: `Agent ${agent.isApproved} successfully`, 
+      agent 
+    });
+  } catch (err: unknown) {
+    let errorMessage = "Unknown error";
+    if (err instanceof Error) errorMessage = err.message;
+
+    console.error("toggleAgent error:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
+  }
 };

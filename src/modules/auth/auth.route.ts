@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { register, login, toggleUserBlock } from "./auth.controller";
+import { register, login, toggleUserBlock, toggleAgent } from "./auth.controller";
 import { authenticate, authorize } from "./auth.middleware";
 
 const router = Router();
@@ -15,5 +15,7 @@ router.post("/login", login);
 
 router.patch("/block/:id", authenticate, authorize(["admin"]), toggleUserBlock);
 
+// ✅ Admin can approve/suspend agent
+router.patch("/agentApprove/:id", authenticate, authorize(["admin"]), toggleAgent);
 
 export default router;

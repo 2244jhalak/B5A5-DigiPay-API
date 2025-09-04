@@ -17,7 +17,15 @@ const AuthSchema: Schema<IAuth> = new Schema(
       enum: ["user", "agent", "admin"], 
       default: "user" 
     },
-    isBlocked: { type: Boolean, default: false }
+    isBlocked: { type: Boolean, default: false },
+    isApproved: { 
+      type: String,
+      enum: ["approve", "suspend"],
+      default: function(this: IAuth) {
+        // Agents need admin approval, others are approved by default
+        return this.role !== "agent" ? "approve" : "suspend";
+      }
+    }
   },
   { timestamps: true }
 );
