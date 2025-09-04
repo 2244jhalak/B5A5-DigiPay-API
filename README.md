@@ -34,18 +34,19 @@ This API is designed for developers to integrate digital payment features into a
 - ✅ Modular architecture for scalability  
 - ✅ Input validation and centralized error handling
 
-### Folder Structure
-B5A5-DigiPay-API/
-│
-├── src/                  # Source code
-│   ├── app.ts            # Express app configuration and server entry point
-│   ├── modules/          # Feature-specific modules (auth,users, wallet, transaction.)
-|
-├── dist/                 # Compiled JavaScript code
-├── .gitignore            # Files to ignore in Git
-├── package.json          # Project dependencies & scripts
-├── package-lock.json     # Lock file
-└── tsconfig.json         # TypeScript configuration
+### 📂 Folder Structure
+
+| Folder/File         | Description                                                      |
+|--------------------|------------------------------------------------------------------|
+| `src/`             | Source code                                                      |
+| `src/app.ts`       | Express app configuration & server entry point                  |
+| `src/modules/`     | Feature-specific modules (auth, users, wallet, transactions)    |
+| `dist/`            | Compiled JavaScript output                                       |
+| `.gitignore`       | Specifies files/folders to ignore in Git                        |
+| `package.json`     | Project dependencies & scripts                                   |
+| `package-lock.json`| Lock file for exact dependency versions                           |
+| `tsconfig.json`    | TypeScript configuration                                         |
+
 
 
 ---
