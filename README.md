@@ -111,4 +111,18 @@ This API is designed for developers to integrate digital payment features into a
 git clone https://github.com/2244jhalak/B5A5-DigiPay-API.git
 cd B5A5-DigiPay-API
 npm install
+```
+## ⚙️ Setup & Environment Variables
+
+Before running the development server, you need to create a `.env` file in the root directory with the following variables:
+
+```env
+# MongoDB connection string
+MONGODB_URI=your_mongodb_connection_string
+
+# Secret key for JWT authentication
+JWT_SECRET=your_jwt_secret
+```
+```
 npm run dev
+```
