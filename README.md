@@ -47,6 +47,36 @@ This API is designed for developers to integrate digital payment features into a
 | `package-lock.json`| Lock file for exact dependency versions                           |
 | `tsconfig.json`    | TypeScript configuration                                         |
 
+### Authentication Routes (/api/auth)
+| Method | Endpoint  | Access | Description             |
+| ------ | --------- | ------ | ----------------------- |
+| POST   | /register | Public | Register a new user     |
+| POST   | /login    | Public | Login and get JWT token |
+
+### User Routes (/api/auth)
+| Method | Endpoint           | Access | Description                 |
+| ------ | ------------------ | ------ | --------------------------- |
+| POST   | /create            | Admin  | Create a new user           |
+| PATCH  | /block/\:id        | Admin  | Block or unblock a user     |
+| PATCH  | /agentApprove/\:id | Admin  | Approve or suspend an Agent |
+
+### Wallet Routes (/api/auth)
+| Method | Endpoint          | Access             | Description                |
+| ------ | ----------------- | ------------------ | -------------------------- |
+| GET    | /me               | User, Agent, Admin | View own wallet            |
+| POST   | /topup            | User               | Top-up (add money)         |
+| POST   | /withdraw         | User               | Withdraw money             |
+| POST   | /send             | User               | Send money to another user |
+| GET    | /\:authId         | Admin              | View **any user’s wallet** |
+| PATCH  | /block/\:walletId | Admin              | Block or unblock a wallet  |
+| POST   | /cash-in  | Agent  | Add money to a user wallet        |
+| POST   | /cash-out | Agent  | Withdraw money from a user wallet |
+
+
+### Transactions Routes (/api/auth)
+| Method | Endpoint | Access             | Description             |
+| ------ | -------- | ------------------ | ----------------------- |
+| GET    | /        | User, Agent, Admin | Get transaction history |
 
 
 ---
