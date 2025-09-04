@@ -32,7 +32,62 @@ This API is designed for developers to integrate digital payment features into a
 - ✅ Automatic wallet creation on user registration  
 - ✅ Secure password storage with bcrypt  
 - ✅ Modular architecture for scalability  
-- ✅ Input validation and centralized error handling  
+- ✅ Input validation and centralized error handling
+
+### 📂 Folder Structure
+
+| Folder/File         | Description                                                      |
+|--------------------|------------------------------------------------------------------|
+| `src/`             | Source code                                                      |
+| `src/app.ts`       | Express app configuration & server entry point                  |
+| `src/modules/`     | Feature-specific modules (auth, users, wallet, transactions)    |
+| `dist/`            | Compiled JavaScript output                                       |
+| `.gitignore`       | Specifies files/folders to ignore in Git                        |
+| `package.json`     | Project dependencies & scripts                                   |
+| `package-lock.json`| Lock file for exact dependency versions                           |
+| `tsconfig.json`    | TypeScript configuration                                         |
+
+### Base Routes
+
+| Base Path                  | Module                 | Description                                  |
+|-----------------------------|-----------------------|----------------------------------------------|
+| `/api/auth`                 | Authentication        | Handles user registration, login, blocking, agent approval/suspension  |
+| `/api/transactions`         | Transactions          | Handles transaction history and management   |
+| `/api/wallet`               | Wallet                | Handles wallet operations (top-up, send, withdraw, cash-in, cash out) |
+| `/api/users`                | User Management       | Handles user creation |
+
+
+### Authentication Routes (/api/auth)
+| Method | Endpoint  | Access | Description             |
+| ------ | --------- | ------ | ----------------------- |
+| POST   | /register | Public | Register a new user     |
+| POST   | /login    | Public | Login and get JWT token |
+| PATCH  | /block/\:id        | Admin  | Block or unblock a user     |
+| PATCH  | /agentApprove/\:id | Admin  | Approve or suspend an Agent |
+
+### User Routes (/api/auth)
+| Method | Endpoint           | Access | Description                 |
+| ------ | ------------------ | ------ | --------------------------- |
+| POST   | /create            | Admin  | Create a new user           |
+
+### Wallet Routes (/api/auth)
+| Method | Endpoint          | Access             | Description                |
+| ------ | ----------------- | ------------------ | -------------------------- |
+| GET    | /me               | User, Agent, Admin | View own wallet            |
+| POST   | /topup            | User               | Top-up (add money)         |
+| POST   | /withdraw         | User               | Withdraw money             |
+| POST   | /send             | User               | Send money to another user |
+| GET    | /\:authId         | Admin              | View **any user’s wallet** |
+| PATCH  | /block/\:walletId | Admin              | Block or unblock a wallet  |
+| POST   | /cash-in  | Agent  | Add money to a user wallet        |
+| POST   | /cash-out | Agent  | Withdraw money from a user wallet |
+
+
+### Transactions Routes (/api/auth)
+| Method | Endpoint | Access             | Description             |
+| ------ | -------- | ------------------ | ----------------------- |
+| GET    | /        | User, Agent, Admin | Get transaction history |
+
 
 ---
 
@@ -42,7 +97,7 @@ This API is designed for developers to integrate digital payment features into a
 - **Language:** TypeScript  
 - **Database:** MongoDB (with Mongoose)  
 - **Authentication:** JWT (JSON Web Tokens)  
-- **Password Security:** bcrypt.js  
+- **Password Security:** bcrypt  
 - **Linting & Code Quality:** ESLint  
 - **Version Control:** Git & GitHub  
 
@@ -55,3 +110,19 @@ This API is designed for developers to integrate digital payment features into a
 ```bash
 git clone https://github.com/2244jhalak/B5A5-DigiPay-API.git
 cd B5A5-DigiPay-API
+npm install
+```
+## ⚙️ Setup & Environment Variables
+
+Before running the development server, you need to create a `.env` file in the root directory with the following variables:
+
+```env
+# MongoDB connection string
+MONGODB_URI=your_mongodb_connection_string
+
+# Secret key for JWT authentication
+JWT_SECRET=your_jwt_secret
+```
+```
+npm run dev
+```
