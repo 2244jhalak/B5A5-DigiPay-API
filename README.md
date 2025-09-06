@@ -1,4 +1,4 @@
-# B5A5 DigiPay API
+        # B5A5 DigiPay API
 
 ## 📌 Project Overview
 
@@ -18,7 +18,7 @@ This API is designed for developers to integrate digital payment features into a
   - Can view all users  
   - Can block/unblock users or wallets  
   - Can view **any user’s wallet**  
-  - Can view **transactions of any user**  
+  - Can view **all transactions**  
 
 - **Agent:**  
   - Can perform **cash-in** (add money) and **cash-out** (withdraw money) operations for users  
@@ -63,8 +63,9 @@ This API is designed for developers to integrate digital payment features into a
 | ------ | --------- | ------ | ----------------------- |
 | POST   | /register | Public | Register a new user     |
 | POST   | /login    | Public | Login and get JWT token |
-| PATCH  | /block/\:id        | Admin  | Block or unblock a user     |
-| PATCH  | /agentApprove/\:id | Admin  | Approve or suspend an Agent |
+| PATCH  | /block/:authId        | Admin  | Block or unblock a user     |
+| PATCH  | /agentApprove/:authId | Admin  | Approve or suspend an Agent |
+| PATCH  | /changeRole/:authId | Admin  | User and Agent role toggle |
 
 ### User Routes (/api/auth)
 | Method | Endpoint           | Access | Description                 |
@@ -78,8 +79,8 @@ This API is designed for developers to integrate digital payment features into a
 | POST   | /topup            | User               | Top-up (add money)         |
 | POST   | /withdraw         | User               | Withdraw money             |
 | POST   | /send             | User               | Send money to another user |
-| GET    | /\:authId         | Admin              | View **any user’s wallet** |
-| PATCH  | /block/\:walletId | Admin              | Block or unblock a wallet  |
+| GET    | /:authId         | Admin              | View **any user’s wallet** |
+| PATCH  | /block/:walletId | Admin              | Block or unblock a wallet  |
 | POST   | /cash-in  | Agent  | Add money to a user wallet        |
 | POST   | /cash-out | Agent  | Withdraw money from a user wallet |
 
