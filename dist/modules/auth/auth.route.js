@@ -14,6 +14,5 @@ router.patch("/block/:authId", auth_middleware_1.authenticate, (0, auth_middlewa
 router.patch("/agentApprove/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleAgent);
 // ✅ Change user role (user → agent/admin or agent → user)
 router.patch("/changeRole/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserRole);
-// ================= Admin routes =================
 router.get("/all", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.getAllUsers);
 exports.default = router;
