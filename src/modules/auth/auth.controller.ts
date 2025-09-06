@@ -11,7 +11,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 // ================= Register =================
 export const register = async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role } = registerSchema.parse(req.body);
+    const { name, email, password } = registerSchema.parse(req.body);
 
     // check existing email
     const existingUser = await AuthModel.findOne({ email });
@@ -22,14 +22,13 @@ export const register = async (req: Request, res: Response) => {
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create new user in Auth collection
+    // create new user in Auth collection (role always user)
     const newUser = await AuthModel.create({
       name,
       email,
       password: hashedPassword,
-      role,
-      // ✅ string enum instead of boolean
-      isApproved: role !== "agent" ? "approve" : "suspend",
+      role: "user", // ✅ force role = user
+      isBlocked: false,
     });
 
     // create wallet for this user
@@ -53,7 +52,6 @@ export const register = async (req: Request, res: Response) => {
         name: newUser.name,
         email: newUser.email,
         role: newUser.role,
-        isApproved: newUser.isApproved,
         walletBalance: wallet.balance,
         isBlocked: wallet.isBlocked,
       },
@@ -97,7 +95,7 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        isApproved: user.isApproved, // agent status দেখাবে
+        isApproved: user.role === "agent" ? user.isApproved : undefined, 
         walletBalance: wallet?.balance || 0,
         walletBlocked: wallet?.isBlocked || false,
         accountBlocked: user.isBlocked || false,
@@ -110,13 +108,10 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-
-/**
- * Admin: Block / Unblock
- */
+// ================= Admin: Block / Unblock =================
 export const toggleUserBlock = async (req: Request, res: Response) => {
   try {
-    const authUser = await AuthModel.findById(req.params.id); 
+    const authUser = await AuthModel.findById(req.params.authId); 
 
     if (!authUser) return res.status(404).json({ message: "Auth user not found" });
 
@@ -137,28 +132,21 @@ export const toggleUserBlock = async (req: Request, res: Response) => {
       authUser,
     });
   } catch (err: unknown) {
-    let errorMessage = "Unknown error";
-
-    if (err instanceof Error) {
-      errorMessage = err.message;
-    }
-
+    let errorMessage = err instanceof Error ? err.message : "Unknown error";
     console.error("toggleUserBlock error:", errorMessage);
     res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
 
-/**
- * Admin: Approve / Suspend Agent
- */
+// ================= Admin: Approve / Suspend Agent =================
 export const toggleAgent = async (req: Request, res: Response) => {
   try {
-    const agent = await AuthModel.findById(req.params.id);
-    console.log(agent)
+    const agent = await AuthModel.findById(req.params.authId);
+
     if (!agent || agent.role !== "agent")
       return res.status(404).json({ message: "Agent not found" });
 
-    // ✅ toggle using string enum
+    // toggle approve/suspend
     agent.isApproved = agent.isApproved === "approve" ? "suspend" : "approve";
     await agent.save();
 
@@ -167,10 +155,59 @@ export const toggleAgent = async (req: Request, res: Response) => {
       agent 
     });
   } catch (err: unknown) {
-    let errorMessage = "Unknown error";
-    if (err instanceof Error) errorMessage = err.message;
-
+    let errorMessage = err instanceof Error ? err.message : "Unknown error";
     console.error("toggleAgent error:", errorMessage);
     res.status(500).json({ message: "Server error", error: errorMessage });
   }
 };
+
+// ================= Admin: Change Role =================
+export const toggleUserRole = async (req: Request, res: Response) => {
+  try {
+    const authUser = await AuthModel.findById(req.params.authId);
+    if (!authUser) return res.status(404).json({ message: "User not found" });
+
+    if (authUser.role === "admin") {
+      return res.status(403).json({ message: "You cannot change another admin's role" });
+    }
+
+    // Toggle logic
+    if (authUser.role === "user") {
+      authUser.role = "agent";
+      authUser.isApproved = "suspend"; // new agent must be approved later
+    } else if (authUser.role === "agent") {
+      authUser.role = "user";
+      authUser.isApproved = undefined;
+    }
+
+    await authUser.save();
+
+    res.json({
+      message: `Role toggled successfully to ${authUser.role}`,
+      authUser,
+    });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("toggleUserRole error:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
+  }
+};
+
+
+// ================= Admin: Get all users =================
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    // Admin এর জন্য সব auth data fetch
+    const users = await AuthModel.find().select("-password"); // password hide করা
+
+    res.status(200).json({
+      message: "All users fetched successfully",
+      users,
+    });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("getAllUsers error:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
+  }
+};
+

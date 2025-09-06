@@ -1,21 +1,33 @@
 import { Router } from "express";
-import { register, login, toggleUserBlock, toggleAgent } from "./auth.controller";
+import { 
+  register, 
+  login, 
+  toggleUserBlock, 
+  toggleAgent, 
+  
+  getAllUsers,
+  toggleUserRole
+} from "./auth.controller";
 import { authenticate, authorize } from "./auth.middleware";
 
 const router = Router();
 
+// Public routes
 router.post("/register", register);
 router.post("/login", login);
 
+// ================= Admin routes =================
 
+// Block / Unblock user
+router.patch("/block/:authId", authenticate, authorize(["admin"]), toggleUserBlock);
 
-/**
- * Admin routes
- */
+// Approve / Suspend agent
+router.patch("/agentApprove/:authId", authenticate, authorize(["admin"]), toggleAgent);
 
-router.patch("/block/:id", authenticate, authorize(["admin"]), toggleUserBlock);
+// ✅ Change user role (user → agent/admin or agent → user)
+router.patch("/changeRole/:authId", authenticate, authorize(["admin"]), toggleUserRole);
+// ================= Admin routes =================
+router.get("/all", authenticate, authorize(["admin"]), getAllUsers);
 
-// ✅ Admin can approve/suspend agent
-router.patch("/agentApprove/:id", authenticate, authorize(["admin"]), toggleAgent);
 
 export default router;

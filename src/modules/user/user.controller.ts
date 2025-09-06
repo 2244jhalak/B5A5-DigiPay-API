@@ -36,7 +36,7 @@ export const createUserController = async (req: Request, res: Response) => {
     const { name, email, password, role, initialBalance } = req.body;
 
     // Validate required fields
-    if (!name || !email || !password || !role) {
+    if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -49,18 +49,21 @@ export const createUserController = async (req: Request, res: Response) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 1️⃣ Create Auth document first
+    // 1️⃣ Create Auth document
     const newAuth = await AuthModel.create({
       name,
       email,
       password: hashedPassword,
-      role, // "user" or "agent" or "admin"
+      role: role || "user", 
       isBlocked: false,
-      isApproved: role === "agent" ? "suspend" : "approve", // agents start as suspended, others approved
+      isApproved: role === "agent" ? "suspend" : undefined, 
     });
 
     // 2️⃣ Create User & Wallet using newAuth._id
-    const { user, wallet } = await createUserWithWallet(newAuth._id.toString(), initialBalance);
+    const { user, wallet } = await createUserWithWallet(
+      newAuth._id.toString(),
+      initialBalance || 50
+    );
 
     res.status(201).json({
       message: "Auth, User, and Wallet created successfully",
