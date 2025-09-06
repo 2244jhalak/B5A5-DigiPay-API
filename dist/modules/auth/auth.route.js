@@ -4,12 +4,16 @@ const express_1 = require("express");
 const auth_controller_1 = require("./auth.controller");
 const auth_middleware_1 = require("./auth.middleware");
 const router = (0, express_1.Router)();
+// Public routes
 router.post("/register", auth_controller_1.register);
 router.post("/login", auth_controller_1.login);
-/**
- * Admin routes
- */
-router.patch("/block/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserBlock);
-// ✅ Admin can approve/suspend agent
-router.patch("/agentApprove/:id", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleAgent);
+// ================= Admin routes =================
+// Block / Unblock user
+router.patch("/block/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserBlock);
+// Approve / Suspend agent
+router.patch("/agentApprove/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleAgent);
+// ✅ Change user role (user → agent/admin or agent → user)
+router.patch("/changeRole/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserRole);
+// ================= Admin routes =================
+router.get("/all", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.getAllUsers);
 exports.default = router;

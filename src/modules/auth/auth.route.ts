@@ -26,8 +26,7 @@ router.patch("/agentApprove/:authId", authenticate, authorize(["admin"]), toggle
 
 // ✅ Change user role (user → agent/admin or agent → user)
 router.patch("/changeRole/:authId", authenticate, authorize(["admin"]), toggleUserRole);
-// ================= Admin routes =================
-router.get("/all", authenticate, authorize(["admin"]), getAllUsers);
 
+router.get("/all", authenticate, authorize(["admin"]), getAllUsers);
 
 export default router;

@@ -44,7 +44,7 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
     try {
         const { name, email, password, role, initialBalance } = req.body;
         // Validate required fields
-        if (!name || !email || !password || !role) {
+        if (!name || !email || !password) {
             return res.status(400).json({ message: "Missing required fields" });
         }
         // Check if email already exists
@@ -54,17 +54,17 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
         }
         // Hash password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        // 1️⃣ Create Auth document first
+        // 1️⃣ Create Auth document
         const newAuth = yield auth_model_1.default.create({
             name,
             email,
             password: hashedPassword,
-            role, // "user" or "agent" or "admin"
+            role: role || "user",
             isBlocked: false,
-            isApproved: role === "agent" ? "suspend" : "approve", // agents start as suspended, others approved
+            isApproved: role === "agent" ? "suspend" : undefined,
         });
         // 2️⃣ Create User & Wallet using newAuth._id
-        const { user, wallet } = yield createUserWithWallet(newAuth._id.toString(), initialBalance);
+        const { user, wallet } = yield createUserWithWallet(newAuth._id.toString(), initialBalance || 50);
         res.status(201).json({
             message: "Auth, User, and Wallet created successfully",
             auth: newAuth,

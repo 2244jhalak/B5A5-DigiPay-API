@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleAgent = exports.toggleUserBlock = exports.login = exports.register = void 0;
+exports.getAllUsers = exports.toggleUserRole = exports.toggleAgent = exports.toggleUserBlock = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_model_1 = __importDefault(require("./auth.model"));
@@ -23,7 +23,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
 // ================= Register =================
 const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, email, password, role } = auth_interface_1.registerSchema.parse(req.body);
+        const { name, email, password } = auth_interface_1.registerSchema.parse(req.body);
         // check existing email
         const existingUser = yield auth_model_1.default.findOne({ email });
         if (existingUser) {
@@ -31,14 +31,13 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         // hash password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        // create new user in Auth collection
+        // create new user in Auth collection (role always user)
         const newUser = yield auth_model_1.default.create({
             name,
             email,
             password: hashedPassword,
-            role,
-            // ✅ string enum instead of boolean
-            isApproved: role !== "agent" ? "approve" : "suspend",
+            role: "user", // ✅ force role = user
+            isBlocked: false,
         });
         // create wallet for this user
         const wallet = yield wallet_model_1.Wallet.create({
@@ -59,7 +58,6 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 name: newUser.name,
                 email: newUser.email,
                 role: newUser.role,
-                isApproved: newUser.isApproved,
                 walletBalance: wallet.balance,
                 isBlocked: wallet.isBlocked,
             },
@@ -100,7 +98,7 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                isApproved: user.isApproved, // agent status দেখাবে
+                isApproved: user.role === "agent" ? user.isApproved : undefined,
                 walletBalance: (wallet === null || wallet === void 0 ? void 0 : wallet.balance) || 0,
                 walletBlocked: (wallet === null || wallet === void 0 ? void 0 : wallet.isBlocked) || false,
                 accountBlocked: user.isBlocked || false,
@@ -114,12 +112,10 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
-/**
- * Admin: Block / Unblock
- */
+// ================= Admin: Block / Unblock =================
 const toggleUserBlock = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const authUser = yield auth_model_1.default.findById(req.params.id);
+        const authUser = yield auth_model_1.default.findById(req.params.authId);
         if (!authUser)
             return res.status(404).json({ message: "Auth user not found" });
         if (authUser.role === "admin") {
@@ -134,25 +130,19 @@ const toggleUserBlock = (req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
     catch (err) {
-        let errorMessage = "Unknown error";
-        if (err instanceof Error) {
-            errorMessage = err.message;
-        }
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
         console.error("toggleUserBlock error:", errorMessage);
         res.status(500).json({ message: "Server error", error: errorMessage });
     }
 });
 exports.toggleUserBlock = toggleUserBlock;
-/**
- * Admin: Approve / Suspend Agent
- */
+// ================= Admin: Approve / Suspend Agent =================
 const toggleAgent = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const agent = yield auth_model_1.default.findById(req.params.id);
-        console.log(agent);
+        const agent = yield auth_model_1.default.findById(req.params.authId);
         if (!agent || agent.role !== "agent")
             return res.status(404).json({ message: "Agent not found" });
-        // ✅ toggle using string enum
+        // toggle approve/suspend
         agent.isApproved = agent.isApproved === "approve" ? "suspend" : "approve";
         yield agent.save();
         res.json({
@@ -161,11 +151,57 @@ const toggleAgent = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
     }
     catch (err) {
-        let errorMessage = "Unknown error";
-        if (err instanceof Error)
-            errorMessage = err.message;
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
         console.error("toggleAgent error:", errorMessage);
         res.status(500).json({ message: "Server error", error: errorMessage });
     }
 });
 exports.toggleAgent = toggleAgent;
+// ================= Admin: Change Role =================
+const toggleUserRole = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const authUser = yield auth_model_1.default.findById(req.params.authId);
+        if (!authUser)
+            return res.status(404).json({ message: "User not found" });
+        if (authUser.role === "admin") {
+            return res.status(403).json({ message: "You cannot change another admin's role" });
+        }
+        // Toggle logic
+        if (authUser.role === "user") {
+            authUser.role = "agent";
+            authUser.isApproved = "suspend"; // new agent must be approved later
+        }
+        else if (authUser.role === "agent") {
+            authUser.role = "user";
+            authUser.isApproved = undefined;
+        }
+        yield authUser.save();
+        res.json({
+            message: `Role toggled successfully to ${authUser.role}`,
+            authUser,
+        });
+    }
+    catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        console.error("toggleUserRole error:", errorMessage);
+        res.status(500).json({ message: "Server error", error: errorMessage });
+    }
+});
+exports.toggleUserRole = toggleUserRole;
+// ================= Admin: Get all users =================
+const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Admin এর জন্য সব auth data fetch
+        const users = yield auth_model_1.default.find().select("-password"); // password hide করা
+        res.status(200).json({
+            message: "All users fetched successfully",
+            users,
+        });
+    }
+    catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        console.error("getAllUsers error:", errorMessage);
+        res.status(500).json({ message: "Server error", error: errorMessage });
+    }
+});
+exports.getAllUsers = getAllUsers;

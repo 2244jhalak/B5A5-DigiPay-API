@@ -53,10 +53,18 @@ const AuthSchema = new mongoose_1.Schema({
     isApproved: {
         type: String,
         enum: ["approve", "suspend"],
-        default: function () {
-            // Agents need admin approval, others are approved by default
-            return this.role !== "agent" ? "approve" : "suspend";
-        }
+        default: undefined, // user/admin হলে কিছু থাকবে না
+        required: false
     }
 }, { timestamps: true });
+// Pre-save hook: role agent হলে isApproved = suspend, না হলে undefined
+AuthSchema.pre("save", function (next) {
+    if (this.role === "agent" && !this.isApproved) {
+        this.isApproved = "suspend";
+    }
+    else if (this.role !== "agent") {
+        this.isApproved = undefined;
+    }
+    next();
+});
 exports.default = mongoose_1.default.model("Auth", AuthSchema);
