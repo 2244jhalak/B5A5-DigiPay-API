@@ -15,6 +15,7 @@ This API is designed for developers to integrate digital payment features into a
 
 - **Admin:**  
   - Can create new users  
+  - Can view all users  
   - Can block/unblock users or wallets  
   - Can view **any user’s wallet**  
   - Can view **transactions of any user**  
