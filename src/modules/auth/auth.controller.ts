@@ -132,7 +132,7 @@ export const toggleUserBlock = async (req: Request, res: Response) => {
       authUser,
     });
   } catch (err: unknown) {
-    let errorMessage = err instanceof Error ? err.message : "Unknown error";
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     console.error("toggleUserBlock error:", errorMessage);
     res.status(500).json({ message: "Server error", error: errorMessage });
   }
@@ -155,7 +155,7 @@ export const toggleAgent = async (req: Request, res: Response) => {
       agent 
     });
   } catch (err: unknown) {
-    let errorMessage = err instanceof Error ? err.message : "Unknown error";
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
     console.error("toggleAgent error:", errorMessage);
     res.status(500).json({ message: "Server error", error: errorMessage });
   }
