@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUsers = exports.toggleUserRole = exports.toggleAgent = exports.toggleUserBlock = exports.login = exports.register = void 0;
+exports.getAllUsers = exports.toggleUserRole = exports.toggleAgent = exports.toggleUserBlock = exports.updateProfile = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_model_1 = __importDefault(require("./auth.model"));
@@ -112,6 +112,38 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
+// ================= Update Profile =================
+const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.params.authId; // অথবা token থেকে authenticated user ID নিতে পারো
+        const { name, profileImage } = req.body;
+        const user = yield auth_model_1.default.findById(userId);
+        if (!user)
+            return res.status(404).json({ message: "User not found" });
+        if (name)
+            user.name = name;
+        if (profileImage)
+            user.profileImage = profileImage;
+        yield user.save();
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                profileImage: user.profileImage,
+                role: user.role,
+                isBlocked: user.isBlocked,
+            },
+        });
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("Update profile error:", errorMessage);
+        res.status(500).json({ message: "Internal server error", error: errorMessage });
+    }
+});
+exports.updateProfile = updateProfile;
 // ================= Admin: Block / Unblock =================
 const toggleUserBlock = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

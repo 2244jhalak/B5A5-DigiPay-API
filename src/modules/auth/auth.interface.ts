@@ -6,7 +6,8 @@ export interface IAuth {
   password: string;
   role: "user" | "agent" | "admin"; 
   isBlocked?: boolean;   
-  isApproved?: "approve" | "suspend";  
+  isApproved?: "approve" | "suspend";
+  profileImage?: string;  
   updatedAt?: Date;
 }
 

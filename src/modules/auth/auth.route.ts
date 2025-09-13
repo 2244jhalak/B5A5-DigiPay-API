@@ -6,7 +6,8 @@ import {
   toggleAgent, 
   
   getAllUsers,
-  toggleUserRole
+  toggleUserRole,
+  updateProfile
 } from "./auth.controller";
 import { authenticate, authorize } from "./auth.middleware";
 
@@ -15,6 +16,7 @@ const router = Router();
 // Public routes
 router.post("/register", register);
 router.post("/login", login);
+router.patch("/updateProfile", authenticate, updateProfile);
 
 // ================= Admin routes =================
 

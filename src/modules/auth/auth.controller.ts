@@ -108,6 +108,39 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// ================= Update Profile =================
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = req.params.authId; // অথবা token থেকে authenticated user ID নিতে পারো
+    const { name, profileImage } = req.body;
+
+    const user = await AuthModel.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (name) user.name = name;
+    if (profileImage) user.profileImage = profileImage;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profileImage: user.profileImage,
+        role: user.role,
+        isBlocked: user.isBlocked,
+      },
+    });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Update profile error:", errorMessage);
+    res.status(500).json({ message: "Internal server error", error: errorMessage });
+  }
+};
+
+
 // ================= Admin: Block / Unblock =================
 export const toggleUserBlock = async (req: Request, res: Response) => {
   try {

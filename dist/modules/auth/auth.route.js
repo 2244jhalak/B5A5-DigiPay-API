@@ -7,6 +7,7 @@ const router = (0, express_1.Router)();
 // Public routes
 router.post("/register", auth_controller_1.register);
 router.post("/login", auth_controller_1.login);
+router.patch("/updateProfile", auth_middleware_1.authenticate, auth_controller_1.updateProfile);
 // ================= Admin routes =================
 // Block / Unblock user
 router.patch("/block/:authId", auth_middleware_1.authenticate, (0, auth_middleware_1.authorize)(["admin"]), auth_controller_1.toggleUserBlock);

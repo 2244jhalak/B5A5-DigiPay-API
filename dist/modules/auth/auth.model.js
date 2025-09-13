@@ -55,7 +55,8 @@ const AuthSchema = new mongoose_1.Schema({
         enum: ["approve", "suspend"],
         default: undefined, // user/admin হলে কিছু থাকবে না
         required: false
-    }
+    },
+    profileImage: { type: String, default: "" }
 }, { timestamps: true });
 // Pre-save hook: role agent হলে isApproved = suspend, না হলে undefined
 AuthSchema.pre("save", function (next) {

@@ -23,8 +23,10 @@ const AuthSchema: Schema<IAuth> = new Schema(
       enum: ["approve", "suspend"],
       default: undefined,  // user/admin হলে কিছু থাকবে না
       required: false
-    }
+    },
+    profileImage: { type: String, default: "" }
   },
+  
   { timestamps: true }
 );
 
