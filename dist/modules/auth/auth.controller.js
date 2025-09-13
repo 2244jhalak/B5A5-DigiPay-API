@@ -36,7 +36,7 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             name,
             email,
             password: hashedPassword,
-            role: "user", // ✅ force role = user
+            role: "user",
             isBlocked: false,
         });
         // create wallet for this user
@@ -51,8 +51,11 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             walletBalance: wallet.balance,
             isBlocked: wallet.isBlocked,
         });
+        // generate JWT token
+        const token = jsonwebtoken_1.default.sign({ id: newUser._id, role: newUser.role }, JWT_SECRET, { expiresIn: "7d" });
         res.status(201).json({
             message: "User registered successfully",
+            token, // ✅ Token send for auto-login
             user: {
                 id: newUser._id,
                 name: newUser.name,
