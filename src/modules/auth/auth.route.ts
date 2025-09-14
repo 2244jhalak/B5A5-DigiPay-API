@@ -16,7 +16,7 @@ const router = Router();
 // Public routes
 router.post("/register", register);
 router.post("/login", login);
-router.patch("/updateProfile", authenticate, updateProfile);
+router.patch("/updateProfile/:authId", authenticate, updateProfile);
 
 // ================= Admin routes =================
 
