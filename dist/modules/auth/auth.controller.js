@@ -96,16 +96,8 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 ? "Login successful, but wallet is blocked"
                 : "Login successful",
             token,
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                isApproved: user.role === "agent" ? user.isApproved : undefined,
-                walletBalance: (wallet === null || wallet === void 0 ? void 0 : wallet.balance) || 0,
-                walletBlocked: (wallet === null || wallet === void 0 ? void 0 : wallet.isBlocked) || false,
-                accountBlocked: user.isBlocked || false,
-            },
+            user: Object.assign({ id: user._id, name: user.name, email: user.email, role: user.role, isApproved: user.role === "agent" ? user.isApproved : undefined, walletBalance: (wallet === null || wallet === void 0 ? void 0 : wallet.balance) || 0, walletBlocked: (wallet === null || wallet === void 0 ? void 0 : wallet.isBlocked) || false, accountBlocked: user.isBlocked || false }, (user.profileImage && { profileImage: user.profileImage }) // optional inclusion
+            )
         });
     }
     catch (error) {

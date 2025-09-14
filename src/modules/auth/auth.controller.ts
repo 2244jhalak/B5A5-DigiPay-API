@@ -99,15 +99,17 @@ export const login = async (req: Request, res: Response) => {
         : "Login successful",
       token,
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isApproved: user.role === "agent" ? user.isApproved : undefined, 
-        walletBalance: wallet?.balance || 0,
-        walletBlocked: wallet?.isBlocked || false,
-        accountBlocked: user.isBlocked || false,
-      },
+  id: user._id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  isApproved: user.role === "agent" ? user.isApproved : undefined,
+  walletBalance: wallet?.balance || 0,
+  walletBlocked: wallet?.isBlocked || false,
+  accountBlocked: user.isBlocked || false,
+  ...(user.profileImage && { profileImage: user.profileImage }) // optional inclusion
+}
+
     });
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
