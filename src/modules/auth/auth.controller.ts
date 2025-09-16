@@ -272,3 +272,24 @@ export const getAllUsers = async (req: Request, res: Response) => {
   }
 };
 
+// ================= Admin: Get all Auth IDs =================
+export const getAllAuthIds = async (req: Request, res: Response) => {
+  try {
+   
+    const authIds = await AuthModel.find({}, "_id name email").lean();
+
+    res.status(200).json({
+      message: "Auth IDs fetched successfully",
+      authIds: authIds.map((u) => ({
+        id: u._id,
+        name: u.name,
+        email: u.email,
+      })),
+    });
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : "Unknown error";
+    console.error("getAllAuthIds error:", errorMessage);
+    res.status(500).json({ message: "Server error", error: errorMessage });
+  }
+};
+

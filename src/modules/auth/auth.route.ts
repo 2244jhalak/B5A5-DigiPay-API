@@ -7,7 +7,8 @@ import {
   
   getAllUsers,
   toggleUserRole,
-  updateProfile
+  updateProfile,
+  getAllAuthIds
 } from "./auth.controller";
 import { authenticate, authorize } from "./auth.middleware";
 
@@ -30,5 +31,7 @@ router.patch("/agentApprove/:authId", authenticate, authorize(["admin"]), toggle
 router.patch("/changeRole/:authId", authenticate, authorize(["admin"]), toggleUserRole);
 
 router.get("/all", authenticate, authorize(["admin"]), getAllUsers);
+
+router.get("/auth-ids", authenticate, authorize(["admin"]), getAllAuthIds);
 
 export default router;

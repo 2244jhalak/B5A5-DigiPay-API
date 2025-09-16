@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUsers = exports.toggleUserRole = exports.toggleAgent = exports.toggleUserBlock = exports.updateProfile = exports.login = exports.register = void 0;
+exports.getAllAuthIds = exports.getAllUsers = exports.toggleUserRole = exports.toggleAgent = exports.toggleUserBlock = exports.updateProfile = exports.login = exports.register = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const auth_model_1 = __importDefault(require("./auth.model"));
@@ -248,3 +248,23 @@ const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getAllUsers = getAllUsers;
+// ================= Admin: Get all Auth IDs =================
+const getAllAuthIds = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const authIds = yield auth_model_1.default.find({}, "_id name email").lean();
+        res.status(200).json({
+            message: "Auth IDs fetched successfully",
+            authIds: authIds.map((u) => ({
+                id: u._id,
+                name: u.name,
+                email: u.email,
+            })),
+        });
+    }
+    catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Unknown error";
+        console.error("getAllAuthIds error:", errorMessage);
+        res.status(500).json({ message: "Server error", error: errorMessage });
+    }
+});
+exports.getAllAuthIds = getAllAuthIds;
