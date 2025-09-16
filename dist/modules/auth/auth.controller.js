@@ -110,15 +110,30 @@ exports.login = login;
 // ================= Update Profile =================
 const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userId = req.params.authId; // অথবা token থেকে authenticated user ID নিতে পারো
-        const { name, profileImage } = req.body;
+        const userId = req.params.authId; // অথবা token থেকে নাও
+        const { name, profileImage, email, password } = req.body;
         const user = yield auth_model_1.default.findById(userId);
         if (!user)
             return res.status(404).json({ message: "User not found" });
+        // name update
         if (name)
             user.name = name;
+        // profile image update
         if (profileImage)
             user.profileImage = profileImage;
+        // email update
+        if (email) {
+            const existingEmail = yield auth_model_1.default.findOne({ email });
+            if (existingEmail && existingEmail._id.toString() !== userId) {
+                return res.status(400).json({ message: "Email already in use" });
+            }
+            user.email = email;
+        }
+        // password update (hash সহ)
+        if (password) {
+            const hashedPassword = yield bcrypt_1.default.hash(password, 10);
+            user.password = hashedPassword;
+        }
         yield user.save();
         res.status(200).json({
             message: "Profile updated successfully",

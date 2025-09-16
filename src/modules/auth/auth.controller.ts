@@ -121,14 +121,32 @@ export const login = async (req: Request, res: Response) => {
 // ================= Update Profile =================
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.authId; // অথবা token থেকে authenticated user ID নিতে পারো
-    const { name, profileImage } = req.body;
+    const userId = req.params.authId; // অথবা token থেকে নাও
+    const { name, profileImage, email, password } = req.body;
 
     const user = await AuthModel.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // name update
     if (name) user.name = name;
+
+    // profile image update
     if (profileImage) user.profileImage = profileImage;
+
+    // email update
+    if (email) {
+      const existingEmail = await AuthModel.findOne({ email });
+      if (existingEmail && existingEmail._id.toString() !== userId) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
+      user.email = email;
+    }
+
+    // password update (hash সহ)
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user.password = hashedPassword;
+    }
 
     await user.save();
 
