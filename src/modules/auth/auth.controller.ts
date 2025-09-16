@@ -122,29 +122,30 @@ export const login = async (req: Request, res: Response) => {
 export const updateProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.params.authId; // অথবা token থেকে নাও
-    const { name, profileImage, email, password } = req.body;
+    const { name, profileImage, newPassword, email } = req.body;
 
     const user = await AuthModel.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // name update
-    if (name) user.name = name;
-
-    // profile image update
-    if (profileImage) user.profileImage = profileImage;
-
-    // email update
-    if (email) {
-      const existingEmail = await AuthModel.findOne({ email });
-      if (existingEmail && existingEmail._id.toString() !== userId) {
+    // Email update (check duplicate)
+    if (email && email !== user.email) {
+      const existingUser = await AuthModel.findOne({ email });
+      if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
       }
       user.email = email;
     }
 
-    // password update (hash সহ)
-    if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
+    // Name update
+    if (name) user.name = name;
+
+    // Profile Image update
+    if (profileImage) user.profileImage = profileImage;
+
+    // Password update
+    if (newPassword && newPassword.trim() !== "") {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
       user.password = hashedPassword;
     }
 
@@ -167,7 +168,6 @@ export const updateProfile = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error", error: errorMessage });
   }
 };
-
 
 // ================= Admin: Block / Unblock =================
 export const toggleUserBlock = async (req: Request, res: Response) => {
