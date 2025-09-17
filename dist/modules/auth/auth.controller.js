@@ -110,11 +110,12 @@ exports.login = login;
 // ================= Update Profile =================
 const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const userId = req.params.authId; // অথবা token থেকে নাও
+        const userId = req.params.authId;
         const { name, profileImage, newPassword, email } = req.body;
         const user = yield auth_model_1.default.findById(userId);
-        if (!user)
+        if (!user) {
             return res.status(404).json({ message: "User not found" });
+        }
         // Email update (check duplicate)
         if (email && email !== user.email) {
             const existingUser = yield auth_model_1.default.findOne({ email });
@@ -124,13 +125,20 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             user.email = email;
         }
         // Name update
-        if (name)
+        if (name && name.trim() !== "") {
             user.name = name;
+        }
         // Profile Image update
-        if (profileImage)
+        if (profileImage && profileImage.trim() !== "") {
             user.profileImage = profileImage;
-        // Password update
+        }
+        // Password update with restriction
         if (newPassword && newPassword.trim() !== "") {
+            if (newPassword.length < 6) {
+                return res.status(400).json({
+                    message: "Password must be at least 6 characters long",
+                });
+            }
             const salt = yield bcrypt_1.default.genSalt(10);
             const hashedPassword = yield bcrypt_1.default.hash(newPassword, salt);
             user.password = hashedPassword;
@@ -151,7 +159,10 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         console.error("Update profile error:", errorMessage);
-        res.status(500).json({ message: "Internal server error", error: errorMessage });
+        res.status(500).json({
+            message: "Internal server error",
+            error: errorMessage,
+        });
     }
 });
 exports.updateProfile = updateProfile;

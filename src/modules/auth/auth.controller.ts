@@ -121,11 +121,13 @@ export const login = async (req: Request, res: Response) => {
 // ================= Update Profile =================
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const userId = req.params.authId; // অথবা token থেকে নাও
+    const userId = req.params.authId; 
     const { name, profileImage, newPassword, email } = req.body;
 
     const user = await AuthModel.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
     // Email update (check duplicate)
     if (email && email !== user.email) {
@@ -137,13 +139,23 @@ export const updateProfile = async (req: Request, res: Response) => {
     }
 
     // Name update
-    if (name) user.name = name;
+    if (name && name.trim() !== "") {
+      user.name = name;
+    }
 
     // Profile Image update
-    if (profileImage) user.profileImage = profileImage;
+    if (profileImage && profileImage.trim() !== "") {
+      user.profileImage = profileImage;
+    }
 
-    // Password update
+    // Password update with restriction
     if (newPassword && newPassword.trim() !== "") {
+      if (newPassword.length < 6) {
+        return res.status(400).json({
+          message: "Password must be at least 6 characters long",
+        });
+      }
+
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(newPassword, salt);
       user.password = hashedPassword;
@@ -165,9 +177,13 @@ export const updateProfile = async (req: Request, res: Response) => {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Update profile error:", errorMessage);
-    res.status(500).json({ message: "Internal server error", error: errorMessage });
+    res.status(500).json({
+      message: "Internal server error",
+      error: errorMessage,
+    });
   }
 };
+
 
 // ================= Admin: Block / Unblock =================
 export const toggleUserBlock = async (req: Request, res: Response) => {
