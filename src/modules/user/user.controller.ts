@@ -52,7 +52,7 @@ export const createUserController = async (req: Request, res: Response) => {
     // ✅ Check if email already exists
     const existingAuth = await AuthModel.findOne({ email });
     if (existingAuth) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(400).json({ message: "Email already exists." });
     }
 
     // ✅ Hash password

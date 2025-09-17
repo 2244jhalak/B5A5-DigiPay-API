@@ -56,7 +56,7 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
         // ✅ Check if email already exists
         const existingAuth = yield auth_model_1.default.findOne({ email });
         if (existingAuth) {
-            return res.status(400).json({ message: "Email already exists" });
+            return res.status(400).json({ message: "Email already exists." });
         }
         // ✅ Hash password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
