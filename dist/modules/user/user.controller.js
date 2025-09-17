@@ -43,18 +43,24 @@ const createUserWithWallet = (authId_1, ...args_1) => __awaiter(void 0, [authId_
 const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, email, password, role, initialBalance } = req.body;
-        // Validate required fields
+        // ✅ Validate required fields
         if (!name || !email || !password) {
             return res.status(400).json({ message: "Missing required fields" });
         }
-        // Check if email already exists
+        // ✅ Validate password length
+        if (password.length < 6) {
+            return res
+                .status(400)
+                .json({ message: "Password must be at least 6 characters long" });
+        }
+        // ✅ Check if email already exists
         const existingAuth = yield auth_model_1.default.findOne({ email });
         if (existingAuth) {
             return res.status(400).json({ message: "Email already exists" });
         }
-        // Hash password
+        // ✅ Hash password
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        // 1️⃣ Create Auth document
+        // ✅ Create Auth document
         const newAuth = yield auth_model_1.default.create({
             name,
             email,
@@ -63,7 +69,7 @@ const createUserController = (req, res) => __awaiter(void 0, void 0, void 0, fun
             isBlocked: false,
             isApproved: role === "agent" ? "suspend" : undefined,
         });
-        // 2️⃣ Create User & Wallet using newAuth._id
+        // ✅ Create User & Wallet using newAuth._id
         const { user, wallet } = yield createUserWithWallet(newAuth._id.toString(), initialBalance || 50);
         res.status(201).json({
             message: "Auth, User, and Wallet created successfully",

@@ -31,35 +31,44 @@ const createUserWithWallet = async (authId: string, initialBalance = 50) => {
 /**
  * Admin endpoint to create a new auth + linked user & wallet
  */
+
+
 export const createUserController = async (req: Request, res: Response) => {
   try {
     const { name, email, password, role, initialBalance } = req.body;
 
-    // Validate required fields
+    // ✅ Validate required fields
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Check if email already exists
+    // ✅ Validate password length
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters long" });
+    }
+
+    // ✅ Check if email already exists
     const existingAuth = await AuthModel.findOne({ email });
     if (existingAuth) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    // Hash password
+    // ✅ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 1️⃣ Create Auth document
+    // ✅ Create Auth document
     const newAuth = await AuthModel.create({
       name,
       email,
       password: hashedPassword,
-      role: role || "user", 
+      role: role || "user",
       isBlocked: false,
-      isApproved: role === "agent" ? "suspend" : undefined, 
+      isApproved: role === "agent" ? "suspend" : undefined,
     });
 
-    // 2️⃣ Create User & Wallet using newAuth._id
+    // ✅ Create User & Wallet using newAuth._id
     const { user, wallet } = await createUserWithWallet(
       newAuth._id.toString(),
       initialBalance || 50
