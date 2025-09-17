@@ -63,11 +63,13 @@ This API is designed for developers to integrate digital payment features into a
 | ------ | --------- | ------ | ----------------------- |
 | POST   | /register | Public | Register a new user     |
 | POST   | /login    | Public | Login and get JWT token |
+| POST   | /updateProfile/:authId  | Public | Update profile |
+| GET  | /auth-ids  | Adminc | Get All Auth-Ids |
 | PATCH  | /block/:authId        | Admin  | Block or unblock a user     |
 | PATCH  | /agentApprove/:authId | Admin  | Approve or suspend an Agent |
 | PATCH  | /changeRole/:authId | Admin  | User and Agent role toggle |
 
-### User Routes (/api/auth)
+### User Routes (/api/auth)          
 | Method | Endpoint           | Access | Description                 |
 | ------ | ------------------ | ------ | --------------------------- |
 | POST   | /create            | Admin  | Create a new user           |
