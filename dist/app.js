@@ -27,7 +27,7 @@ const app = (0, express_1.default)();
 // Middleware
 app.use(express_1.default.json());
 app.use((0, cors_1.default)({
-    origin: ["http://localhost:5173"], // 👉 Add your Vercel frontend URL in production
+    origin: ["http://localhost:5173", "https://digipay-six.vercel.app"],
 }));
 // Routes
 app.use("/api/auth", auth_route_1.default);

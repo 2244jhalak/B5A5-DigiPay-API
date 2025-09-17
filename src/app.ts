@@ -17,7 +17,7 @@ const app: Application = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // 👉 Add your Vercel frontend URL in production
+    origin: ["http://localhost:5173", "https://digipay-six.vercel.app"], 
   })
 );
 
