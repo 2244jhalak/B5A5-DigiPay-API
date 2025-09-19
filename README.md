@@ -8,6 +8,11 @@ It is built using **Node.js**, **Express.js**, and **TypeScript**, providing rob
 This API is designed for developers to integrate digital payment features into applications while maintaining security and scalability.
 
 ---
+## 📌 Live Link
+https://digipay-api.vercel.app/
+---
+
+---
 
 ## 🚀 Features
 
