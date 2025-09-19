@@ -200,21 +200,37 @@ export const sendMoney = async (req: AuthRequest, res: Response) => {
     const parsed = walletSchema.parse(req.body);
     const { amount, toAuthId } = parsed;
     const fromAuthId = req.user?.id;
+
     if (!fromAuthId) return res.status(401).json({ message: "Unauthorized" });
     if (!toAuthId) return res.status(400).json({ message: "toAuthId is required" });
+
+    // 🔴 User cannot send money to themselves
+    if (fromAuthId === toAuthId) {
+      return res.status(400).json({ message: "You cannot send money to yourself" });
+    }
 
     // Wallet authId
     const senderWallet = await WalletModel.findOne({ authId: fromAuthId });
     const receiverWallet = await WalletModel.findOne({ authId: toAuthId });
-    if (!senderWallet || !receiverWallet)
-      return res.status(404).json({ message: "Sender or receiver wallet not found" });
 
-    if (senderWallet.isBlocked) return res.status(403).json({ message: "Sender wallet is blocked" });
-    if (receiverWallet.isBlocked) return res.status(403).json({ message: "Receiver wallet is blocked" });
-    if (senderWallet.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
+    if (!senderWallet || !receiverWallet) {
+      return res.status(404).json({ message: "Sender or receiver wallet not found" });
+    }
+
+    if (senderWallet.isBlocked) {
+      return res.status(403).json({ message: "Sender wallet is blocked" });
+    }
+    if (receiverWallet.isBlocked) {
+      return res.status(403).json({ message: "Receiver wallet is blocked" });
+    }
+
+    if (senderWallet.balance < amount) {
+      return res.status(400).json({ message: "Insufficient balance" });
+    }
 
     const session = await mongoose.startSession();
     session.startTransaction();
+
     try {
       senderWallet.balance -= amount;
       receiverWallet.balance += amount;
@@ -245,18 +261,17 @@ export const sendMoney = async (req: AuthRequest, res: Response) => {
       throw txErr;
     }
   } catch (err: unknown) {
-  if (err instanceof Error && err.name === "ZodError") {
-    // @ts-expect-error: ZodError has 'errors' property
-    return res.status(400).json({ errors: err.errors });
+    if (err instanceof Error && err.name === "ZodError") {
+      // @ts-expect-error: ZodError has 'errors' property
+      return res.status(400).json({ errors: err.errors });
+    }
+
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(err);
+    return res.status(500).json({ message: "Server error", error: message });
   }
-
-  const message = err instanceof Error ? err.message : String(err);
-  console.error(err);
-  return res.status(500).json({ message: "Server error", error: message });
-}
-
-
 };
+
 
 
 /**
